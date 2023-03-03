@@ -55,8 +55,10 @@ def main_worker(gpu, ngpus_per_node, opt):
     phase_logger.info('Begin model {}.'.format(opt['phase']))
     try:
         if opt['phase'] == 'train':
+            import ipdb; ipdb.set_trace()
             model.train()
         else:
+            import ipdb; ipdb.set_trace()
             model.test()
     finally:
         phase_writer.close()

@@ -24,6 +24,7 @@ class Network(BaseNetwork):
         betas = make_beta_schedule(**self.beta_schedule[phase])
         betas = betas.detach().cpu().numpy() if isinstance(
             betas, torch.Tensor) else betas
+        self.betas = betas
         alphas = 1. - betas
 
         timesteps, = betas.shape
@@ -68,7 +69,7 @@ class Network(BaseNetwork):
 
         model_mean, posterior_log_variance = self.q_posterior(
             y_0_hat=y_0_hat, y_t=y_t, t=t)
-        return model_mean, posterior_log_variance
+        return model_mean, posterior_log_variance, y_0_hat
 
     def q_sample(self, y_0, sample_gammas, noise=None):
         noise = default(noise, lambda: torch.randn_like(y_0))
@@ -79,7 +80,7 @@ class Network(BaseNetwork):
 
     @torch.no_grad()
     def p_sample(self, y_t, t, clip_denoised=True, y_cond=None):
-        model_mean, model_log_variance = self.p_mean_variance(
+        model_mean, model_log_variance, y_0_hat = self.p_mean_variance(
             y_t=y_t, t=t, clip_denoised=clip_denoised, y_cond=y_cond)
         noise = torch.randn_like(y_t) if any(t>0) else torch.zeros_like(y_t)
         return model_mean + noise * (0.5 * model_log_variance).exp()
