@@ -127,7 +127,6 @@ if __name__ == '__main__':
         model = init_obj(model_opt, logger, default_file_name='models.model', init_type='Model')
 
         return model
-    import ipdb; ipdb.set_trace()
     ''' Grabs our pretrained model '''
     model = create_model(
             opt = opt,
@@ -154,14 +153,18 @@ if __name__ == '__main__':
             transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]),
             transforms.Grayscale(num_output_channels=1)
         ])
+    mask_trans_img = transforms.Compose([
+            transforms.Resize((image_size[0], image_size[1])),
+            transforms.ToTensor(),
+            transforms.Grayscale(num_output_channels=1)
+        ])
     low_res_img = trans_img(pil_loader(args.lr_img_path)).reshape(1, 1, *image_size)
     high_res_img = trans_img(pil_loader(args.hr_img_path)).reshape(1, 1, *image_size)
-    mask_img = trans_img(pil_loader(args.mask_path)).reshape(1, 1, *image_size)
+    mask_img = mask_trans_img(pil_loader(args.mask_path)).reshape(1, 1, *image_size)
     
     low_res_img = low_res_img.to(device)
     high_res_img = high_res_img.to(device)
     mask_img = mask_img.to(device)
-    import ipdb; ipdb.set_trace()
     
     masked_hi_res = high_res_img * mask_img
 
@@ -224,8 +227,7 @@ if __name__ == '__main__':
                     
                     # For some reason the code calls the cumprod of the alphas gamma based on their notation
                     # I'm gonna rename it alpha_cumprod
-                    alpha_cumprod = _extract_into_tensor(
-                        model.netG.gammas, t, x_t.shape)
+                    alpha_cumprod = model.netG.gammas[t_cur]
 
                     gt_weight = torch.sqrt(alpha_cumprod)
                     gt_part = gt_weight * masked_hi_res
@@ -241,7 +243,6 @@ if __name__ == '__main__':
                     x_t = weighed_gt + (1 - mask_img) * (x_t)
                 
                 # Line 7 in Algo 1
-                import ipdb; ipdb.set_trace()
                 model_mean, model_log_variance, x_0_hat = model.netG.p_mean_variance(
                     x_t,
                     t,
@@ -249,7 +250,7 @@ if __name__ == '__main__':
                     y_cond=y_cond
                 )
 
-                noise = torch.randn_like(x_t) if any(t>0) else torch.zeros_like(y_t)
+                noise = torch.randn_like(x_t) if any(t>0) else torch.zeros_like(x_t)
 
                 x_t = model_mean + noise * (0.5 * model_log_variance).exp()
 
