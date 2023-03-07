@@ -75,6 +75,7 @@ if __name__ == '__main__':
     parser.add_argument('--lr-img-path',  type=str, default=None, help="Path to low res image")
     parser.add_argument('--hr-img-path',  type=str, default=None, help="Path to high res image")
     parser.add_argument('--mask-path',  type=str, default=None, help="Path to mask")
+    parser.add_argument('-o', '--output', type=str, default='output/repaint.png', help='Path to output image')
     parser.add_argument('--num-inference-steps',  type=int, default=250, help="Number of inference steps to run")
     parser.add_argument('--jump-length',  type=int, default=10, help="Number of steps to jump forward in time")
     parser.add_argument('--jump-n-sample',  type=int, default=10, help="Number of times to jump forward in time")
@@ -161,11 +162,11 @@ if __name__ == '__main__':
     low_res_img = trans_img(pil_loader(args.lr_img_path)).reshape(1, 1, *image_size)
     high_res_img = trans_img(pil_loader(args.hr_img_path)).reshape(1, 1, *image_size)
     mask_img = mask_trans_img(pil_loader(args.mask_path)).reshape(1, 1, *image_size)
-    
+
     low_res_img = low_res_img.to(device)
     high_res_img = high_res_img.to(device)
     mask_img = mask_img.to(device)
-    
+
     masked_hi_res = high_res_img * mask_img
 
     x_t = None
@@ -181,12 +182,12 @@ if __name__ == '__main__':
     # Line 1 of Algo 1
     x_t = default(x_t, lambda: torch.randn_like(y_cond))
     ret_arr = x_t
-    
+
     x_0_hat = None
 
 
     # Setup timesteps
-    # These funky timesteps are generated based on the discussion in Section 4.2 of the paper 
+    # These funky timesteps are generated based on the discussion in Section 4.2 of the paper
     num_inference_steps = args.num_inference_steps
     jump_length = args.jump_length
     jump_n_sample = args.jump_n_sample
@@ -218,13 +219,13 @@ if __name__ == '__main__':
         model.netG.eval()
         for i, t_cur in enumerate(tqdm(timesteps, desc='sampling loop time steps')):
             t = torch.full((b,), t_cur, device=y_cond.device, dtype=torch.long)
-            
-            
+
+
             if t_cur < t_last: # reverse step
                 # Reverse step of diffusion process
                 # Line 4 and 5 of Algo 1
                 if x_0_hat is not None:
-                    
+
                     # For some reason the code calls the cumprod of the alphas gamma based on their notation
                     # I'm gonna rename it alpha_cumprod
                     alpha_cumprod = model.netG.gammas[t_cur]
@@ -238,10 +239,10 @@ if __name__ == '__main__':
                     # E1. 8a
                     weighed_gt = gt_part + noise_part
 
-                    # Eq. 8c   
-                    # Line 8 in Algo 1 
+                    # Eq. 8c
+                    # Line 8 in Algo 1
                     x_t = weighed_gt + (1 - mask_img) * (x_t)
-                
+
                 # Line 7 in Algo 1
                 model_mean, model_log_variance, x_0_hat = model.netG.p_mean_variance(
                     x_t,
@@ -258,7 +259,7 @@ if __name__ == '__main__':
                 # Forward step of diffusion process
                 # x_t+1 ~ N(sqrt(1-beta_t)x_t, beta_t I)
                 # x_t+1 = sqrt(1-beta_t)x_t + sqrt(beta_t) N(0, I)
-                
+
                 # Get variance at timestep t_last
                 beta = model.netG.betas[t_last]
 
@@ -269,3 +270,6 @@ if __name__ == '__main__':
                 x_t =(1-beta)**0.5 * x_t + beta**0.5 * noise
 
             t_last = t_cur
+
+    img = Image.fromarray((x_t.squeeze().detach().cpu().numpy() * 255).astype(np.uint8), 'L')
+    img.save(args.output)
