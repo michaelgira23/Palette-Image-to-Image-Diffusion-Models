@@ -23,6 +23,9 @@ if __name__ == '__main__':
     parser.add_argument('-gpu', '--gpu_ids', type=str, default=None)
     parser.add_argument('--lr-img-path',  type=str, default=None, help="Path to low res image")
     parser.add_argument('--hr-img-path',  type=str, default=None, help="Path to high res image")
+    parser.add_argument('-o', '--output', type=str, default='output/repaint.png', help='Path to output image')
+    # parser.add_argument('-o', '--output-dir', type=str, default='output', help='Directory to output images')
+    # parser.add_argument('-n', '--output-name', type=str, default='debug', help='Name of output images')
     parser.add_argument('-c', '--config', type=str, default='config/superresolution.json', help='JSON file for configuration')
 
     ''' parser configs '''
@@ -71,7 +74,7 @@ if __name__ == '__main__':
         model = init_obj(model_opt, logger, default_file_name='models.model', init_type='Model')
 
         return model
-    
+
     model = create_model(
             opt = opt,
             networks = networks,
@@ -104,3 +107,6 @@ if __name__ == '__main__':
     with torch.no_grad():
         low_res_img = low_res_img.to('cuda:{}'.format(gpu))
         output, visuals = model.netG.restoration(low_res_img, sample_num=1)
+
+        out_result = (output.detach() * 255).type(torch.uint8).cpu().numpy()[0][0]
+        Image.fromarray(out_result, 'L').save(args.output)
