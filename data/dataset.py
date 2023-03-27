@@ -6,7 +6,7 @@ import torch
 import numpy as np
 
 from .util.mask import (bbox2mask, brush_stroke_mask,
-                        get_irregular_mask, random_bbox, random_cropping_bbox)
+                        get_irregular_mask, random_bbox, random_cropping_bbox, tiling_bbox)
 
 IMG_EXTENSIONS = [
     '.jpg', '.JPG', '.jpeg', '.JPEG',
@@ -218,3 +218,65 @@ class SuperresolutionDataset(data.Dataset):
 
     def __len__(self):
         return len(self.flist)
+
+class SuperresolutionTilingDataset(data.Dataset):
+    def __init__(self, data_root, data_flist, mask_config={}, data_len=-1, image_size=[256, 256], loader=pil_loader):
+        self.data_root = data_root
+        flist = make_dataset(data_flist)
+        if data_len > 0:
+            self.flist = flist[:int(data_len)]
+        else:
+            self.flist = flist
+        self.tfs = transforms.Compose([
+            transforms.Resize((image_size[0], image_size[1])),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]),
+            transforms.Grayscale(num_output_channels=1)
+        ])
+        self.loader = loader
+        self.mask_config = mask_config
+        self.mask_mode = self.mask_config['mask_mode']
+        self.image_size = image_size
+
+    def __getitem__(self, index):
+        ret = {}
+        file_name = str(self.flist[index]) + '.png'
+
+        img = self.tfs(self.loader(
+            '{}/{}/{}'.format(self.data_root, 'hr', file_name)))
+        mask = self.get_mask()
+        cond_image = self.tfs(self.loader(
+            '{}/{}/{}'.format(self.data_root, 'lr', file_name)))
+        mask_img = img*(1. - mask) + mask
+
+        ret['gt_image'] = img
+        ret['cond_image'] = cond_image
+        ret['mask_image'] = mask_img
+        ret['mask'] = mask
+        ret['path'] = file_name
+        return ret
+
+    def __len__(self):
+        return len(self.flist)
+
+    def get_mask(self):
+        if self.mask_mode == 'manual':
+            mask = bbox2mask(self.image_size, self.mask_config['shape'])
+        elif self.mask_mode == 'fourdirection' or self.mask_mode == 'onedirection':
+            mask = bbox2mask(self.image_size, random_cropping_bbox(
+                mask_mode=self.mask_mode))
+        elif self.mask_mode == 'hybrid':
+            if np.random.randint(0, 2) < 1:
+                mask = bbox2mask(self.image_size, random_cropping_bbox(
+                    mask_mode='onedirection'))
+            else:
+                mask = bbox2mask(self.image_size, random_cropping_bbox(
+                    mask_mode='fourdirection'))
+        elif self.mask_mode == 'file':
+            pass
+        elif self.mask_mode == 'tiling':
+            mask = bbox2mask(self.image_size, tiling_bbox())
+        else:
+            raise NotImplementedError(
+                f'Mask mode {self.mask_mode} has not been implemented.')
+        return torch.from_numpy(mask).permute(2, 0, 1)

@@ -63,7 +63,7 @@ def random_bbox(img_shape=(256,256), max_bbox_shape=(128, 128), max_bbox_delta=4
         max_bbox_delta = (max_bbox_delta, max_bbox_delta)
     if not isinstance(min_margin, tuple):
         min_margin = (min_margin, min_margin)
-        
+
     img_h, img_w = img_shape[:2]
     max_mask_h, max_mask_w = max_bbox_shape
     max_delta_h, max_delta_w = max_bbox_delta
@@ -95,6 +95,21 @@ def random_bbox(img_shape=(256,256), max_bbox_shape=(128, 128), max_bbox_delta=4
     h = max_mask_h - delta_top
     w = max_mask_w - delta_left
     return (top, left, h, w)
+
+
+def tiling_bbox(img_shape=(256,256)):
+    h, w = img_shape
+    _type = np.random.randint(0, 3)
+    if _type == 0:
+        # Mask everything
+        top, left, height, width = 0, 0, h, w
+    elif _type == 1:
+        # Draw full left
+        top, left, height, width = 0, w//2, h, w//2
+    elif _type == 2:
+        # Draw bottom corner
+        top, left, height, width = h//2, w//2, h//2, w//2
+    return (top, left, height, width)
 
 
 def bbox2mask(img_shape, bbox, dtype='uint8'):

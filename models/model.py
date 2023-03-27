@@ -97,7 +97,7 @@ class Palette(BaseModel):
             ret_path.append('Out_{}'.format(self.path[idx]))
             ret_result.append(self.visuals[idx-self.batch_size].detach().float().cpu())
         
-        if self.task in ['inpainting','uncropping']:
+        if self.task in ['inpainting','uncropping','superresolution-mask']:
             ret_path.extend(['Mask_{}'.format(name) for name in self.path])
             ret_result.extend(self.mask_image)
 
