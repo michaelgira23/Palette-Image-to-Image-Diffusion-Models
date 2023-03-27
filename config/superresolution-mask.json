@@ -10,7 +10,7 @@
         "tb_logger": "tb_logger", // path of tensorboard logger
         "results": "results",
         "checkpoint": "checkpoint",
-        "resume_state": "experiments/train_superresolution_230322_234410-275-epochs/checkpoint/100"
+        "resume_state": "experiments/train_superresolution_230216_172432-225-epochs/checkpoint/225"
         // "resume_state": null // ex: 100, loading .state  and .pth from given epoch and iteration
     },
 
@@ -19,8 +19,8 @@
             "which_dataset": {  // import designated dataset using arguments
                 "name": ["data.dataset", "SuperresolutionDataset"], // import Dataset() class / function(not recommend) from data.dataset.py (default is [data.dataset.py])
                 "args":{ // arguments to initialize dataset
-                    "data_root": "../matter-density-superresolution/train-2",
-                    "data_flist": "../matter-density-superresolution/train-2/flist.txt",
+                    "data_root": "../matter-density-superresolution/train-1",
+                    "data_flist": "../matter-density-superresolution/train-1/flist.txt",
                     "data_len": -1
                 }
             },
@@ -46,8 +46,8 @@
             "which_dataset": {
                 "name": "SuperresolutionDataset", // import Dataset() class / function(not recommend) from default file
                 "args":{
-                    "data_root": "../matter-density-superresolution/test-2",
-                    "data_flist": "../matter-density-superresolution/test-2/flist.txt"
+                    "data_root": "../matter-density-superresolution/test-1",
+                    "data_flist": "../matter-density-superresolution/test-1/flist.txt"
                 }
             },
             "dataloader":{

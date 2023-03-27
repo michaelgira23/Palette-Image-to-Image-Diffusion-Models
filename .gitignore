@@ -1,7 +1,9 @@
 # myself
 experiments/*
-datasets/*
 !experiments/clean.sh
+datasets/*
+output/*
+patches/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
