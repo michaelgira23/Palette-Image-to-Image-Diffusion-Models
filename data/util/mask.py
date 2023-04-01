@@ -97,9 +97,9 @@ def random_bbox(img_shape=(256,256), max_bbox_shape=(128, 128), max_bbox_delta=4
     return (top, left, h, w)
 
 
-def tiling_bbox(img_shape=(256,256)):
+def tiling_bbox(img_shape=(256,256), type=None):
     h, w = img_shape
-    _type = np.random.randint(0, 3)
+    _type = np.random.randint(0, 3) if type == None else type
     if _type == 0:
         # Mask everything
         top, left, height, width = 0, 0, h, w
