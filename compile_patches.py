@@ -9,6 +9,8 @@ from os import mkdir, path
 from shutil import rmtree
 from PIL import Image
 
+from data.util.mask import bbox2mask, tiling_bbox
+
 def pil_loader(path):
     return Image.open(path).convert('RGB')
 
@@ -26,7 +28,7 @@ tfs_to_tensor = transforms.Compose([
     transforms.Grayscale(num_output_channels=1),
 ])
 
-def compile_patches(directory, i, full_size, patch_size, stride, until_x = None, until_y = None):
+def compile_patches(directory, i, full_size, patch_size, stride, apply_mask, until_x = None, until_y = None):
     # if path.isdir(directory):
     # 	rmtree(directory)
     # mkdir(directory)
@@ -35,8 +37,8 @@ def compile_patches(directory, i, full_size, patch_size, stride, until_x = None,
 
     full_img = torch.zeros((full_size, full_size))
 
-    for x_start in range(0, full_size - stride, stride):
-        for y_start in range(0, full_size - stride, stride):
+    for x_start in range(0, full_size, stride):
+        for y_start in range(0, full_size, stride):
             if (x_start == until_x and y_start == until_y):
                 return full_img
 
@@ -45,22 +47,41 @@ def compile_patches(directory, i, full_size, patch_size, stride, until_x = None,
 
             fname = f'{i}-x-{x_start}-y-{y_start}'
 
-            generated_path = f'{directory}/output/{fname}.png'
-            mask_path = f'{directory}/mask/{fname}.png'
+            patch_path = f'{directory}/{fname}.png'
 
-            if not path.isfile(generated_path):
-                print(f'Skipping {generated_path} because it does not exist!')
+            if not path.isfile(patch_path):
+                print(f'Skipping {patch_path} because it does not exist!')
                 continue
 
-            generated_img = tfs(pil_loader(generated_path))
+            generated_img = tfs(pil_loader(patch_path))
 
-            # Flip mask when drawing output
-            mask_img = (tfs_to_tensor(pil_loader(mask_path)) == 0).type(torch.uint8)
+            if apply_mask:
+                # Determine which mask to use.
+                # 0 = generated full image
+                # 1 = generate only right
+                # 2 = generate only bottom right corner
+                mask_type = None
+                if x_start == 0:
+                    if y_start == 0:
+                        mask_type = 0
+                    else:
+                        mask_type = 1
+                else:
+                    mask_type = 2
 
-            full_img[x_start:x_end, y_start:y_end] += (generated_img * mask_img)[0]
+                mask = bbox2mask((patch_size, patch_size), tiling_bbox(img_shape=(patch_size, patch_size), type=mask_type))
+                mask = torch.from_numpy(mask).permute(2, 0, 1)[0]
+            else:
+                mask = torch.ones((patch_size, patch_size))
+            # print(mask.shape)
+            # print(mask)
 
-            img = Image.fromarray((full_img * 255).type(torch.uint8).numpy(), 'L')
-            img.save(f'{directory}/compiled_patches/{fname}.png')
+            full_img[x_start:x_end, y_start:y_end] += (generated_img * mask)[0]
+
+            # img = Image.fromarray((full_img * 255).type(torch.uint8).numpy(), 'L')
+            # img.save(f'{directory}/compiled_patches/{fname}.png')
+            # break
+        # break
     return full_img
 
 if __name__ == '__main__':
