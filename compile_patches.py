@@ -39,8 +39,9 @@ def compile_patches(directory, i, full_size, patch_size, stride, apply_mask, unt
 
     for x_start in range(0, full_size, stride):
         for y_start in range(0, full_size, stride):
-            if (x_start == until_x and y_start == until_y):
-                return full_img
+            if until_x != None and until_y != None:
+                if (x_start >= until_x and y_start >= until_y):
+                    return full_img
 
             x_end = x_start + patch_size
             y_end = y_start + patch_size
@@ -73,15 +74,8 @@ def compile_patches(directory, i, full_size, patch_size, stride, apply_mask, unt
                 mask = torch.from_numpy(mask).permute(2, 0, 1)[0]
             else:
                 mask = torch.ones((patch_size, patch_size))
-            # print(mask.shape)
-            # print(mask)
 
             full_img[x_start:x_end, y_start:y_end] += (generated_img * mask)[0]
-
-            # img = Image.fromarray((full_img * 255).type(torch.uint8).numpy(), 'L')
-            # img.save(f'{directory}/compiled_patches/{fname}.png')
-            # break
-        # break
     return full_img
 
 if __name__ == '__main__':
