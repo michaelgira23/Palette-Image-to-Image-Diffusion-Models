@@ -30,7 +30,7 @@ class Palette(BaseModel):
             self.EMA = EMA(beta=self.ema_scheduler['ema_decay'])
         else:
             self.ema_scheduler = None
-        
+
         ''' networks can be a list, and must convert by self.set_device function if using multiple GPU. '''
         self.netG = self.set_device(self.netG, distributed=self.opt['distributed'])
         if self.ema_scheduler is not None:
@@ -39,7 +39,7 @@ class Palette(BaseModel):
 
         self.optG = torch.optim.Adam(list(filter(lambda p: p.requires_grad, self.netG.parameters())), **optimizers[0])
         self.optimizers.append(self.optG)
-        self.resume_training() 
+        self.resume_training()
 
         if self.opt['distributed']:
             self.netG.module.set_loss(self.loss_fn)
@@ -55,7 +55,7 @@ class Palette(BaseModel):
 
         self.sample_num = sample_num
         self.task = task
-        
+
     def set_input(self, data):
         ''' must use set_device in tensor '''
         self.cond_image = self.set_device(data.get('cond_image'))
@@ -64,13 +64,13 @@ class Palette(BaseModel):
         self.mask_image = data.get('mask_image')
         self.path = data['path']
         self.batch_size = len(data['path'])
-    
+
     def get_current_visuals(self, phase='train'):
         dict = {
             'gt_image': (self.gt_image.detach()[:].float().cpu()+1)/2,
             'cond_image': (self.cond_image.detach()[:].float().cpu()+1)/2,
         }
-        if self.task in ['inpainting','uncropping']:
+        if self.task in ['inpainting','uncropping','superresolution-mask']:
             dict.update({
                 'mask': self.mask.detach()[:].float().cpu(),
                 'mask_image': (self.mask_image+1)/2,
@@ -93,10 +93,10 @@ class Palette(BaseModel):
 
             ret_path.append('Process_{}'.format(self.path[idx]))
             ret_result.append(self.visuals[idx::self.batch_size].detach().float().cpu())
-            
+
             ret_path.append('Out_{}'.format(self.path[idx]))
             ret_result.append(self.visuals[idx-self.batch_size].detach().float().cpu())
-        
+
         if self.task in ['inpainting','uncropping','superresolution-mask']:
             ret_path.extend(['Mask_{}'.format(name) for name in self.path])
             ret_result.extend(self.mask_image)
@@ -130,7 +130,7 @@ class Palette(BaseModel):
         for scheduler in self.schedulers:
             scheduler.step()
         return self.train_metrics.result()
-    
+
     def val_step(self):
         self.netG.eval()
         self.val_metrics.reset()
@@ -138,18 +138,18 @@ class Palette(BaseModel):
             for val_data in tqdm.tqdm(self.val_loader):
                 self.set_input(val_data)
                 if self.opt['distributed']:
-                    if self.task in ['inpainting','uncropping']:
-                        self.output, self.visuals = self.netG.module.restoration(self.cond_image, y_t=self.cond_image, 
+                    if self.task in ['inpainting','uncropping','superresolution-mask']:
+                        self.output, self.visuals = self.netG.module.restoration(self.cond_image, y_t=self.cond_image,
                             y_0=self.gt_image, mask=self.mask, sample_num=self.sample_num)
                     else:
                         self.output, self.visuals = self.netG.module.restoration(self.cond_image, sample_num=self.sample_num)
                 else:
-                    if self.task in ['inpainting','uncropping']:
-                        self.output, self.visuals = self.netG.restoration(self.cond_image, y_t=self.cond_image, 
+                    if self.task in ['inpainting','uncropping','superresolution-mask']:
+                        self.output, self.visuals = self.netG.restoration(self.cond_image, y_t=self.cond_image,
                             y_0=self.gt_image, mask=self.mask, sample_num=self.sample_num)
                     else:
                         self.output, self.visuals = self.netG.restoration(self.cond_image, sample_num=self.sample_num)
-                    
+
                 self.iter += self.batch_size
                 self.writer.set_iter(self.epoch, self.iter, phase='val')
 
@@ -171,18 +171,18 @@ class Palette(BaseModel):
             for phase_data in tqdm.tqdm(self.phase_loader):
                 self.set_input(phase_data)
                 if self.opt['distributed']:
-                    if self.task in ['inpainting','uncropping']:
-                        self.output, self.visuals = self.netG.module.restoration(self.cond_image, y_t=self.cond_image, 
+                    if self.task in ['inpainting','uncropping','superresolution-mask']:
+                        self.output, self.visuals = self.netG.module.restoration(self.cond_image, y_t=self.cond_image,
                             y_0=self.gt_image, mask=self.mask, sample_num=self.sample_num)
                     else:
                         self.output, self.visuals = self.netG.module.restoration(self.cond_image, sample_num=self.sample_num)
                 else:
-                    if self.task in ['inpainting','uncropping']:
-                        self.output, self.visuals = self.netG.restoration(self.cond_image, y_t=self.cond_image, 
+                    if self.task in ['inpainting','uncropping','superresolution-mask']:
+                        self.output, self.visuals = self.netG.restoration(self.cond_image, y_t=self.cond_image,
                             y_0=self.gt_image, mask=self.mask, sample_num=self.sample_num)
                     else:
                         self.output, self.visuals = self.netG.restoration(self.cond_image, sample_num=self.sample_num)
-                        
+
                 self.iter += self.batch_size
                 self.writer.set_iter(self.epoch, self.iter, phase='test')
                 for met in self.metrics:
@@ -193,12 +193,12 @@ class Palette(BaseModel):
                 for key, value in self.get_current_visuals(phase='test').items():
                     self.writer.add_images(key, value)
                 self.writer.save_images(self.save_current_results())
-        
+
         test_log = self.test_metrics.result()
-        ''' save logged informations into log dict ''' 
+        ''' save logged informations into log dict '''
         test_log.update({'epoch': self.epoch, 'iters': self.iter})
 
-        ''' print logged informations to the screen and tensorboard ''' 
+        ''' print logged informations to the screen and tensorboard '''
         for key, value in test_log.items():
             self.logger.info('{:5s}: {}\t'.format(str(key), value))
 
