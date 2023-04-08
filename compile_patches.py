@@ -61,7 +61,8 @@ def compile_patches(directory, i, full_size, patch_size, stride, apply_mask, unt
                 # Determine which mask to use.
                 # 0 = generated full image
                 # 1 = generate only right
-                # 2 = generate only bottom right corner
+                # 2 = generate only bottom
+                # 3 = generate only bottom right corner
                 mask_type = None
                 if x_start == 0:
                     if y_start == 0:
@@ -69,7 +70,10 @@ def compile_patches(directory, i, full_size, patch_size, stride, apply_mask, unt
                     else:
                         mask_type = 1
                 else:
-                    mask_type = 2
+                    if y_start == 0:
+                        mask_type = 2
+                    else:
+                        mask_type = 3
 
                 mask = bbox2mask((patch_size, patch_size), tiling_bbox(img_shape=(patch_size, patch_size), type=mask_type))
                 mask = torch.from_numpy(mask).permute(2, 0, 1)[0]

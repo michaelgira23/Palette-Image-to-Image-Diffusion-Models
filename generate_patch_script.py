@@ -18,13 +18,19 @@ for i, image in enumerate(images):
 	# Determine which mask to use.
 	# 0 = generated full image
 	# 1 = generate only right
-	# 2 = generate only bottom right corner
-	mask_type = 2
+	# 2 = generate only bottom
+	# 3 = generate only bottom right corner
+	mask_type = None
 	if x == 0:
 		if y == 0:
 			mask_type = 0
 		else:
 			mask_type = 1
+	else:
+		if y == 0:
+			mask_type = 2
+		else:
+			mask_type = 3
 
 	cmds.append(f'python generate_mask.py --dir {sr_img_dir} -o {mask_path} -x {x} -y {y}')
 	cmds.append(f'python superresolve.py --lr-img-path {lr_img_path} --mask-img-path {mask_path} --mask-type {mask_type} -o {sr_img_path} -c config/superresolution-mask.json')

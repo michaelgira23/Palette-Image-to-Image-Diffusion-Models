@@ -99,7 +99,7 @@ def random_bbox(img_shape=(256,256), max_bbox_shape=(128, 128), max_bbox_delta=4
 
 def tiling_bbox(img_shape=(256,256), type=None):
     h, w = img_shape
-    _type = np.random.randint(0, 3) if type == None else type
+    _type = np.random.randint(0, 4) if type == None else type
     if _type == 0:
         # Mask everything
         top, left, height, width = 0, 0, h, w
@@ -107,6 +107,9 @@ def tiling_bbox(img_shape=(256,256), type=None):
         # Draw full left
         top, left, height, width = 0, w//2, h, w//2
     elif _type == 2:
+        # Draw full bottom
+        top, left, height, width = h//2, 0, h//2, w
+    elif _type == 3:
         # Draw bottom corner
         top, left, height, width = h//2, w//2, h//2, w//2
     return (top, left, height, width)
