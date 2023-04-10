@@ -21,7 +21,7 @@ def is_image_file(filename):
 def make_dataset(dir):
     if os.path.isfile(dir):
         images = [i for i in np.genfromtxt(
-            dir, dtype=np.str, encoding='utf-8')]
+            dir, dtype=np.str, encoding='utf-8', ndmin=1)]
     else:
         images = []
         assert os.path.isdir(dir), '%s is not a valid directory' % dir
@@ -236,6 +236,7 @@ class SuperresolutionTilingDataset(data.Dataset):
         self.loader = loader
         self.mask_config = mask_config
         self.mask_mode = self.mask_config['mask_mode']
+        self.tiling_mode = self.mask_config['tiling_mode']
         self.image_size = image_size
 
     def __getitem__(self, index):
@@ -275,7 +276,8 @@ class SuperresolutionTilingDataset(data.Dataset):
         elif self.mask_mode == 'file':
             pass
         elif self.mask_mode == 'tiling':
-            mask = bbox2mask(self.image_size, tiling_bbox())
+            print(self.tiling_mode)
+            mask = bbox2mask(self.image_size, tiling_bbox(type=self.tiling_mode))
         else:
             raise NotImplementedError(
                 f'Mask mode {self.mask_mode} has not been implemented.')

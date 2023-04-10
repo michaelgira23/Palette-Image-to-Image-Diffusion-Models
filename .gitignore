@@ -4,6 +4,7 @@ experiments/*
 datasets/*
 output/*
 patches/*
+single-datasets/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
