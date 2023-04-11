@@ -28,7 +28,7 @@ tfs_to_tensor = transforms.Compose([
     transforms.Grayscale(num_output_channels=1),
 ])
 
-def compile_patches(directory, i, full_size, patch_size, stride, apply_mask, until_x = None, until_y = None, bg_fill=1, print_warnings=False):
+def compile_patches(directory, i, full_size, patch_size, stride, apply_mask, until_x = None, until_y = None, bg_fill=float('NaN'), print_warnings=False):
     # if path.isdir(directory):
     # 	rmtree(directory)
     # mkdir(directory)
@@ -37,8 +37,8 @@ def compile_patches(directory, i, full_size, patch_size, stride, apply_mask, unt
 
     full_img = torch.full((full_size, full_size), bg_fill, dtype=torch.float32)
 
-    for x_start in range(0, full_size, stride):
-        for y_start in range(0, full_size, stride):
+    for x_start in range(0, full_size - stride, stride):
+        for y_start in range(0, full_size - stride, stride):
             if until_x != None and until_y != None:
                 if (x_start >= until_x and y_start >= until_y):
                     return full_img

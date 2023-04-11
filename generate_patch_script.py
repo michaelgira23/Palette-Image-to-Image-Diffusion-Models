@@ -1,8 +1,9 @@
 import numpy as np
 
 tile_path = '../matter-density-superresolution/tile-1'
+index = 1
 
-images = [i for i in np.genfromtxt('patches/flist.txt', dtype=str, encoding='utf-8')]
+images = [i for i in np.genfromtxt(f'{tile_path}/flist-{index}.txt', dtype=str, encoding='utf-8')]
 
 cmds = []
 for i, image in enumerate(images):
@@ -34,7 +35,7 @@ for i, image in enumerate(images):
 
 	single_dataset_name = 'single-datasets/single-tile'
 
-	cmds.append(f'python generate_mask.py --dir {sr_img_dir} -o {mask_path} -x {x} -y {y}')
+	cmds.append(f'python generate_mask.py --index {index} --dir {sr_img_dir} -o {mask_path} -x {x} -y {y}')
 	cmds.append(f'python prepare_single_dataset.py --fname {image} --lr-img-path {lr_img_path} --mask-img-path {mask_path} --mask-type {mask_type} --out-dir {single_dataset_name}')
 	cmds.append(f'python run.py -p test -c {single_dataset_name}/config.json')
 	cmds.append(f'python copy-latest-output.py -d {sr_img_path} -f test_superresolution-single_')
