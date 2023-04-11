@@ -28,7 +28,7 @@ tfs_to_tensor = transforms.Compose([
     transforms.Grayscale(num_output_channels=1),
 ])
 
-def compile_patches(directory, i, full_size, patch_size, stride, apply_mask, until_x = None, until_y = None, bg_fill=float('NaN'), print_warnings=False):
+def compile_patches(directory, i, full_size, patch_size, stride, apply_mask=True, until_x = None, until_y = None, bg_fill=float('NaN'), print_warnings=False):
     # if path.isdir(directory):
     # 	rmtree(directory)
     # mkdir(directory)

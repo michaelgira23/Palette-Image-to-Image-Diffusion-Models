@@ -5,6 +5,9 @@ datasets/*
 output/*
 patches/*
 single-datasets/*
+animation/*
+/process.gif
+/process.mp4
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
