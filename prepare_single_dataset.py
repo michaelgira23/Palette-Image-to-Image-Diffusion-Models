@@ -13,7 +13,7 @@ if __name__ == '__main__':
     parser.add_argument('--mask-img-path',  type=str, default=None, help="Path to mask image")
     parser.add_argument('--mask-type',  type=int, default=0, help="Mask type")
     parser.add_argument('-c', '--config', type=str, default='config/superresolution-mask.json', help='JSON file for configuration')
-    parser.add_argument('-o', '--out-dir', type=str, default=f'single-datasets/{int(time.time())}', help='JSON file for configuration')
+    parser.add_argument('-o', '--out-dir', type=str, default=f'single-datasets/{int(time.time())}', help='Dataset output directory')
 
     args = parser.parse_args()
 

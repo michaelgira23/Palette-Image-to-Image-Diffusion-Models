@@ -32,7 +32,12 @@ for i, image in enumerate(images):
 		else:
 			mask_type = 3
 
+	single_dataset_name = 'single-datasets/single-tile'
+
 	cmds.append(f'python generate_mask.py --dir {sr_img_dir} -o {mask_path} -x {x} -y {y}')
-	cmds.append(f'python superresolve.py --lr-img-path {lr_img_path} --mask-img-path {mask_path} --mask-type {mask_type} -o {sr_img_path} -c config/superresolution-mask.json')
+	cmds.append(f'python prepare_single_dataset.py --fname {image} --lr-img-path {lr_img_path} --mask-img-path {mask_path} --mask-type {mask_type} --out-dir {single_dataset_name}')
+	cmds.append(f'python run.py -p test -c {single_dataset_name}/config.json')
+	cmds.append(f'python copy-latest-output.py -d {sr_img_path} -f test_superresolution-single_')
+	cmds.append('')
 
 np.savetxt('run_big.bat', np.array(cmds, dtype=str), '%s', encoding='utf-8')
