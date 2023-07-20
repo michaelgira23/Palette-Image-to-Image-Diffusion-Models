@@ -276,7 +276,6 @@ class SuperresolutionTilingDataset(data.Dataset):
         elif self.mask_mode == 'file':
             pass
         elif self.mask_mode == 'tiling':
-            print(self.tiling_mode)
             mask = bbox2mask(self.image_size, tiling_bbox(type=self.tiling_mode))
         else:
             raise NotImplementedError(

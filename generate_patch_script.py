@@ -1,7 +1,7 @@
 import numpy as np
 
-tile_path = '../matter-density-superresolution/tile-1'
-index = 1
+tile_path = '../matter-density-superresolution/tile-2'
+index = 10
 
 images = [i for i in np.genfromtxt(f'{tile_path}/flist-{index}.txt', dtype=str, encoding='utf-8')]
 

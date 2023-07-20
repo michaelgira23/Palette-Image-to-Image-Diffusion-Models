@@ -14,6 +14,7 @@ if __name__ == '__main__':
     parser.add_argument('--mask-type',  type=int, default=0, help="Mask type")
     parser.add_argument('-c', '--config', type=str, default='config/superresolution-mask.json', help='JSON file for configuration')
     parser.add_argument('-o', '--out-dir', type=str, default=f'single-datasets/{int(time.time())}', help='Dataset output directory')
+    parser.add_argument('--checkpoint',  type=str, default=None, help="Model checkpoint")
 
     args = parser.parse_args()
 
@@ -62,6 +63,10 @@ if __name__ == '__main__':
     config['datasets']['test']['which_dataset']['args']['data_root'] = args.out_dir
     config['datasets']['test']['which_dataset']['args']['data_flist'] = flist_path
     config['datasets']['test']['which_dataset']['args']['mask_config']['tiling_mode'] = args.mask_type
+
+    if args.checkpoint:
+        print('Checkpoint is', args.checkpoint)
+        config['path']['resume_state'] = args.checkpoint
 
     with open(f'{args.out_dir}/config.json', 'w') as f:
         json.dump(config, f, indent=4)

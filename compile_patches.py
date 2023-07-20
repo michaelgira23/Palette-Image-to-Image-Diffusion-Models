@@ -1,12 +1,7 @@
-# Stitch together
-
-import argparse
-import numpy as np
 import torch
 from torchvision import transforms
 
-from os import mkdir, path
-from shutil import rmtree
+from os import path
 from PIL import Image
 
 from data.util.mask import bbox2mask, tiling_bbox
@@ -14,26 +9,12 @@ from data.util.mask import bbox2mask, tiling_bbox
 def pil_loader(path):
     return Image.open(path).convert('L')
 
-# tfs = transforms.Compose([
-#     transforms.Resize((256, 256)),
-#     transforms.ToTensor(),
-#     # transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]),
-#     transforms.Grayscale(num_output_channels=1),
-# ])
-
 tfs_to_tensor = transforms.Compose([
-    # transforms.Resize((256, 256)),
     transforms.ToTensor(),
-    # transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]),
     transforms.Grayscale(num_output_channels=1),
 ])
 
 def compile_patches(directory, i, full_size, patch_size, stride, apply_mask=True, until_x = None, until_y = None, bg_fill=float('NaN'), print_warnings=False):
-    # if path.isdir(directory):
-    # 	rmtree(directory)
-    # mkdir(directory)
-    # mkdir(f'{directory}/lr')
-    # mkdir(f'{directory}/mask')
 
     full_img = torch.full((full_size, full_size), bg_fill, dtype=torch.float32)
 
